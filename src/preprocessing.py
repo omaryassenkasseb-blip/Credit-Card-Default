@@ -6,28 +6,32 @@ from sklearn.compose import ColumnTransformer
 import joblib
 import os
 
-def load_and_preprocess_data(file_path="data/UCI_Credit_Card.csv", test_size=0.2, random_state=42):
+def load_and_preprocess_data(file_path="data/raw/UCI_Credit_Card.csv", test_size=0.2, random_state=42):
     """
-    Loads credit card dataset, cleans categorical anomalies, 
-    splits into train/test, and applies scaling.
+    Loads credit card dataset, cleans categorical anomalies,
+    saves cleaned version to processed folder, splits into train/test, and applies scaling.
     """
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Dataset not found at {file_path}. Please place UCI_Credit_Card.csv in data/ directory.")
+        raise FileNotFoundError(f"Dataset not found at {file_path}. Please place UCI_Credit_Card.csv in data/raw/ directory.")
 
     df = pd.read_csv(file_path)
-    
+
     # Drop ID column if present
     if 'ID' in df.columns:
         df = df.drop(columns=['ID'])
-        
+
     # Standardize target column name
     target_col = 'default.payment.next.month' if 'default.payment.next.month' in df.columns else 'default_payment_next_month'
-    
+
     # Clean known anomalies in UCI Credit Card Dataset
-    # EDUCATION: 0, 5, 6 are undocumented/unknown -> group into 4 (Others)
-    df['EDUCATION'] = df['EDUCATION'].replace({0: 4, 5: 4, 6: 4})
-    # MARRIAGE: 0 is undocumented -> group into 3 (Others)
-    df['MARRIAGE'] = df['MARRIAGE'].replace({0: 3})
+    if 'EDUCATION' in df.columns:
+        df['EDUCATION'] = df['EDUCATION'].replace({0: 4, 5: 4, 6: 4})
+    if 'MARRIAGE' in df.columns:
+        df['MARRIAGE'] = df['MARRIAGE'].replace({0: 3})
+
+    # Save processed cleaned dataframe
+    os.makedirs("data/processed", exist_ok=True)
+    df.to_csv("data/processed/cleaned_data.csv", index=False)
 
     X = df.drop(columns=[target_col])
     y = df[target_col]
@@ -60,5 +64,5 @@ def load_and_preprocess_data(file_path="data/UCI_Credit_Card.csv", test_size=0.2
 
 if __name__ == "__main__":
     X_train, X_test, y_train, y_test, features = load_and_preprocess_data()
-    print(f"Data successfully loaded & preprocessed!")
+    print("Data successfully loaded, processed, & saved to data/processed/cleaned_data.csv!")
     print(f"Train set shape: {X_train.shape}, Test set shape: {X_test.shape}")
